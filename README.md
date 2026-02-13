@@ -17,13 +17,13 @@ Competitive programming is scattered. You solve distinct problems on **LeetCode*
 
 <div align="center">
 
-<img width="900" alt="Dashboard Preview" src="https://github.com/user-attachments/assets/7675610b-3833-4b13-992d-364f15afd576" />
+<img width="1830" height="1037" alt="image" src="https://github.com/user-attachments/assets/9ce03ca9-012f-4903-839a-4fa6191649a8" />
 
 *Your personal Command Center: Visualize your consistency, difficulty spread, and recent activity.*
 
 <br><br>
 
-<img width="400" alt="Popup Preview" src="https://github.com/user-attachments/assets/31b9822e-55dd-4d9b-bd1a-8c4ad4d76702" />
+<img width="419" height="454" alt="image" src="https://github.com/user-attachments/assets/f5e42913-b36b-461e-b114-417684aebbd4" />
 
 *One-click logging: The extension auto-fills the problem details for you.*
 
