@@ -1,4 +1,4 @@
-# DSA TRACKER // GHOST PROTOCOL
+# DSA TRACKER
 
 ![Version](https://img.shields.io/badge/version-1.0.0-7000FF?style=for-the-badge) ![Status](https://img.shields.io/badge/status-ONLINE-00FF94?style=for-the-badge) ![Privacy](https://img.shields.io/badge/privacy-LOCAL_ONLY-00FFFF?style=for-the-badge)
 
@@ -9,10 +9,12 @@
 
 ## 📸 TRANSMISSION PREVIEW
 
-![Dashboard Preview](PLACEHOLDER_FOR_DASHBOARD_SCREENSHOT)
+<img width="1881" height="1085" alt="image" src="https://github.com/user-attachments/assets/ba8bd2fa-97cd-457c-84ec-79d1efc5aed9" />
+
 *The Command Center: Visualize your streak, heatmaps, and difficulty distribution.*
 
-![Popup Preview](PLACEHOLDER_FOR_POPUP_SCREENSHOT)
+<img width="516" height="432" alt="image" src="https://github.com/user-attachments/assets/90de485a-6a7a-4e5a-a5a3-76fdf22ad674" />
+
 *The Signal Interceptor: Instantly detects problems and extracts tags.*
 
 ---
