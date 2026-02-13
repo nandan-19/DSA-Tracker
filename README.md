@@ -1,6 +1,6 @@
 # DSA TRACKER
 
-![Version](https://img.shields.io/badge/version-1.1.0-7000FF?style=for-the-badge) ![Status](https://img.shields.io/badge/status-ONLINE-00FF94?style=for-the-badge) ![Privacy](https://img.shields.io/badge/privacy-LOCAL_ONLY-00FFFF?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-1.1.0-7000FF?style=for-the-badge) ![Status](https://img.shields.io/badge/status-ONLINE-FCA311?style=for-the-badge) ![Privacy](https://img.shields.io/badge/privacy-LOCAL_ONLY-00FFFF?style=for-the-badge)
 
 ## The Problem
 Competitive programming is scattered. You solve distinct problems on **LeetCode**, arrays on **GeeksForGeeks**, and contests on **CodeForces**. 
