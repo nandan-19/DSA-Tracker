@@ -1,0 +1,183 @@
+:root {
+    --bg-void: #050507;
+    --bg-panel: #0E0E11;
+    --border-glow: #333338;
+    --neon-primary: #7000FF;
+    --neon-secondary: #00FFFF;
+    --neon-success: #00FF94;
+    --text-main: #FFFFFF;
+    --text-muted: #888899;
+    --font-code: 'JetBrains Mono', monospace;
+    --font-display: 'Inter', sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    width: 320px;
+    background-color: var(--bg-void);
+    color: var(--text-main);
+    font-family: var(--font-display);
+}
+
+.container {
+    padding: 16px;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.brand {
+    font-family: var(--font-code);
+    font-weight: 700;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.brand .icon {
+    color: var(--neon-primary);
+}
+
+.status {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border-glow);
+    box-shadow: 0 0 5px var(--border-glow);
+}
+
+.status.online {
+    background: var(--neon-success);
+    box-shadow: 0 0 8px var(--neon-success);
+}
+
+.status.offline {
+    background: var(--border-glow);
+}
+
+.card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-glow);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 16px;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.label {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-family: var(--font-code);
+}
+
+.badge {
+    font-size: 10px;
+    color: var(--neon-secondary);
+    font-family: var(--font-code);
+    text-transform: uppercase;
+}
+
+#problem-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tags {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.tag {
+    font-size: 10px;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: var(--font-code);
+}
+
+.btn-neon {
+    width: 100%;
+    background: rgba(112, 0, 255, 0.1);
+    border: 1px solid var(--neon-primary);
+    color: var(--neon-primary);
+    padding: 10px;
+    border-radius: 6px;
+    font-family: var(--font-code);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+.btn-neon:hover:not(:disabled) {
+    background: var(--neon-primary);
+    color: white;
+    box-shadow: 0 0 15px rgba(112, 0, 255, 0.4);
+}
+
+.btn-neon:disabled {
+    border-color: var(--border-glow);
+    color: var(--text-muted);
+    background: transparent;
+    cursor: not-allowed;
+}
+
+.link-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-family: var(--font-code);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 auto;
+    margin-top: 16px;
+}
+
+.link-btn:hover {
+    color: var(--text-main);
+}
+
+.message {
+    margin-top: 12px;
+    font-size: 11px;
+    text-align: center;
+    color: var(--neon-success);
+    font-family: var(--font-code);
+}
+
+.message.error {
+    color: #FF0055;
+}
+
+.hidden {
+    display: none;
+}
