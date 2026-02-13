@@ -39,6 +39,28 @@
                 INITIATE TRACKING
             </button>
 
+            <!-- Additional Config Section -->
+            <details id="config-section" class="config-details">
+                <summary class="config-summary">
+                    <span class="material-symbols-rounded">tune</span>
+                    ADDITIONAL CONFIG
+                </summary>
+                <div class="config-content">
+                    <div class="form-group">
+                        <label for="custom-date">DATE SOLVED</label>
+                        <input type="date" id="custom-date" class="input-neon" onclick="this.showPicker()">
+                    </div>
+                    <div class="form-group">
+                        <label for="custom-title">TITLE OVERRIDE</label>
+                        <input type="text" id="custom-title" class="input-neon" placeholder="Auto-detected...">
+                    </div>
+                    <div class="form-group">
+                        <label for="custom-tags">TAGS (COMMA SEPARATED)</label>
+                        <input type="text" id="custom-tags" class="input-neon" placeholder="Array, DP, Graph...">
+                    </div>
+                </div>
+            </details>
+
             <div id="message" class="message hidden"></div>
         </main>
 

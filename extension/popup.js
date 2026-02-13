@@ -43,19 +43,33 @@ document.addEventListener('DOMContentLoaded', async () => {
     badge.innerText = data.platform || "UNKNOWN CLASSIFICATION";
     titleEl.innerText = data.title || "Unknown Problem";
 
-    // Tags
+    // Populate Config Inputs
+    const now = new Date();
+    // Format for date input: YYYY-MM-DD
+    const dateString = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().slice(0, 10);
+    const dateInput = document.getElementById('custom-date');
+    dateInput.value = dateString;
+    dateInput.max = dateString; // Restrict future dates
+
+    document.getElementById('custom-title').value = data.title || "";
+    document.getElementById('custom-tags').value = (data.tags || []).join(', ');
+
+    // Tags Display
+    renderTags(data.tags || []);
+
+    // Enable Button
+    trackBtn.disabled = false;
+  }
+
+  function renderTags(tags) {
+    if (!tagsContainer) return;
     tagsContainer.innerHTML = '';
-    (data.tags || []).slice(0, 5).forEach(tag => {
+    tags.slice(0, 5).forEach(tag => {
       const t = document.createElement('span');
       t.className = 'tag';
       t.innerText = tag;
       tagsContainer.appendChild(t);
     });
-
-    // Enable Button
-    trackBtn.disabled = false;
-
-    // Check if already saved? (Optional optimization)
   }
 
   function handleFallback(tab) {
@@ -72,14 +86,26 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     badge.innerText = platform;
 
+    // Default Config Values
+    const now = new Date();
+    const dateString = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().slice(0, 10);
+    const dateInput = document.getElementById('custom-date');
+    dateInput.value = dateString;
+    dateInput.max = dateString; // Restrict future dates
+
     if (platform !== "UNKNOWN") {
       // It's a coding site but maybe content script failed or page loading
-      titleEl.innerText = tab.title.replace(' - LeetCode', '').split('|')[0].trim();
+      const detectedTitle = tab.title.replace(' - LeetCode', '').split('|')[0].trim();
+      titleEl.innerText = detectedTitle;
       trackBtn.disabled = false;
+
+      // Populate Inputs
+      document.getElementById('custom-title').value = detectedTitle;
+      document.getElementById('custom-tags').value = "";
 
       currentProblem = {
         url: tab.url,
-        title: titleEl.innerText,
+        title: detectedTitle,
         platform: platform,
         tags: [],
         difficulty: 'Medium' // Default
@@ -87,22 +113,42 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else {
       titleEl.innerText = "No Signal Detected";
       trackBtn.disabled = true;
+      document.getElementById('custom-title').value = "";
+      document.getElementById('custom-tags').value = "";
     }
   }
 
   // 3. Track Action
   trackBtn.addEventListener('click', async () => {
-    if (!currentProblem) return;
+    if (!currentProblem && !document.getElementById('custom-title').value) return;
 
     trackBtn.disabled = true;
     trackBtn.innerHTML = '<span class="material-symbols-rounded">sync</span> PROCESSING...';
 
     try {
+      // Get Custom Values
+      const customTitle = document.getElementById('custom-title').value.trim();
+      const customTagsStr = document.getElementById('custom-tags').value;
+      const customDateStr = document.getElementById('custom-date').value;
+
+      const customTags = customTagsStr ? customTagsStr.split(',').map(t => t.trim()).filter(t => t) : [];
+      const customDate = customDateStr ? new Date(customDateStr).getTime() : Date.now();
+
+      // Merge with currentProblem, allowing overrides
+      const finalProblem = {
+        ...currentProblem,
+        title: customTitle || currentProblem?.title || "Untitled Problem",
+        tags: customTags, // Trust the input value 100%
+        // If currentProblem is null (manual entry), ensure we have defaults
+        platform: currentProblem?.platform || "MANUAL",
+        url: currentProblem?.url || "manual-entry"
+      };
+
       // Add Timestamp and ID
       const newEntry = {
         id: Date.now().toString(),
-        timestamp: Date.now(),
-        ...currentProblem
+        timestamp: customDate, // Use the custom date
+        ...finalProblem
       };
 
       // Save
@@ -128,6 +174,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       trackBtn.innerHTML = '<span class="material-symbols-rounded">check</span> TRACKING ACTIVE';
       trackBtn.style.color = 'var(--neon-success)';
       trackBtn.style.borderColor = 'var(--neon-success)';
+
+      // Update visual tags to show what was saved
+      renderTags(finalProblem.tags);
+
 
 
     } catch (err) {

@@ -181,3 +181,75 @@ header {
 .hidden {
     display: none;
 }
+
+/* Config Section */
+.config-details {
+    margin-top: 12px;
+    border: 1px solid var(--border-glow);
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.2);
+    /* overflow: hidden; Removed to prevent clipping if needed */
+}
+
+.config-summary {
+    padding: 10px;
+    font-size: 10px;
+    font-family: var(--font-code);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    list-style: none;
+    transition: color 0.2s;
+}
+
+.config-summary:hover {
+    color: var(--neon-secondary);
+}
+
+.config-summary::-webkit-details-marker {
+    display: none;
+}
+
+.config-content {
+    padding: 12px;
+    border-top: 1px solid var(--border-glow);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.form-group label {
+    font-size: 9px;
+    color: var(--text-muted);
+    font-family: var(--font-code);
+    letter-spacing: 0.5px;
+}
+
+.input-neon {
+    background: var(--bg-void);
+    border: 1px solid var(--border-glow);
+    color: var(--text-main);
+    padding: 8px;
+    border-radius: 4px;
+    font-family: var(--font-code);
+    font-size: 11px;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.input-neon:focus {
+    border-color: var(--neon-secondary);
+    box-shadow: 0 0 5px rgba(0, 255, 255, 0.2);
+}
+
+.input-neon::placeholder {
+    color: rgba(255, 255, 255, 0.2);
+}

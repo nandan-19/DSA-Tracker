@@ -299,27 +299,72 @@ function getPlatformIcon(platform) {
 }
 
 function renderHeatmap() {
-    const heatmap = document.getElementById('heatmap');
-    if (!heatmap) return;
-    heatmap.innerHTML = '';
+    const grid = document.getElementById('heatmapGrid');
+    const monthsContainer = document.getElementById('heatmapMonths');
+    if (!grid || !monthsContainer) return;
 
-    // Last 60 days
-    // Map date string to count
+    grid.innerHTML = '';
+    monthsContainer.innerHTML = '';
+
+    // Data Map
     const activityMap = {};
     appData.forEach(q => {
         const dateStr = new Date(q.timestamp || 0).toDateString();
         activityMap[dateStr] = (activityMap[dateStr] || 0) + 1;
     });
 
-    for (let i = 59; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        const dateStr = d.toDateString();
-        const count = activityMap[dateStr] || 0;
+    // Trailing Year Configuration (Last 365 Days)
+    const endDate = new Date(); // Today
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - 365);
 
+    // Calculate start padding to align with Sunday (Row 1)
+    // 0 = Sunday, 1 = Monday...
+    const startPadding = startDate.getDay();
+
+    // Fill empty cells for days before startDate in the first week
+    for (let i = 0; i < startPadding; i++) {
+        const placeholder = document.createElement('div');
+        placeholder.style.width = '12px';
+        placeholder.style.height = '12px';
+        grid.appendChild(placeholder);
+    }
+
+    // Iterate through all days from startDate to endDate
+    let currentDate = new Date(startDate);
+
+    // Track cells to calculate column index for labels
+    let cellCount = startPadding;
+    let previouslyLabeledMonth = -1;
+
+    // Use fragment for performance
+    const gridFragment = document.createDocumentFragment();
+    const monthsFragment = document.createDocumentFragment();
+
+    while (currentDate <= endDate) {
+        const dateStr = currentDate.toDateString();
+        const count = activityMap[dateStr] || 0;
+        const month = currentDate.getMonth();
+
+        // Month Labels Logic
+        if (month !== previouslyLabeledMonth) {
+            // Calculate column index (approximate)
+            const colIndex = Math.floor(cellCount / 7);
+
+            const label = document.createElement('div');
+            label.className = 'month-label';
+            label.innerText = currentDate.toLocaleDateString('en-US', { month: 'short' });
+            // 15px = 12px cell + 3px gap
+            label.style.left = `${colIndex * 15}px`;
+            monthsFragment.appendChild(label);
+
+            previouslyLabeledMonth = month;
+        }
+
+        // Create Cell
         const div = document.createElement('div');
         div.className = 'heat-cell';
-        div.title = `${dateStr}: ${count} solved`;
+        div.title = `${dateStr}: ${count} contributions`;
 
         if (count > 0) {
             if (count === 1) div.classList.add('heat-l1');
@@ -328,7 +373,64 @@ function renderHeatmap() {
             else div.classList.add('heat-l4');
         }
 
-        heatmap.appendChild(div);
+        gridFragment.appendChild(div);
+
+        // Increment
+        currentDate.setDate(currentDate.getDate() + 1);
+        cellCount++;
+    }
+
+    grid.appendChild(gridFragment);
+    monthsContainer.appendChild(monthsFragment);
+
+    // --- RENDER YEARLY STATS ---
+    const statsContainer = document.getElementById('heatmapStats');
+    if (statsContainer) {
+        // Calculate Stats for the rendered period
+        let totalContribs = 0;
+        let activeDays = 0;
+        let maxStreak = 0;
+        let currentStreak = 0;
+        let maxSingleDay = 0;
+
+        // Re-iterate from startDate to endDate to ensure correct stats for the view
+        let iterDate = new Date(startDate);
+        while (iterDate <= endDate) {
+            const dStr = iterDate.toDateString();
+            const count = activityMap[dStr] || 0;
+
+            if (count > 0) {
+                totalContribs += count;
+                activeDays++;
+                currentStreak++;
+                if (count > maxSingleDay) maxSingleDay = count;
+            } else {
+                if (currentStreak > maxStreak) maxStreak = currentStreak;
+                currentStreak = 0;
+            }
+            iterDate.setDate(iterDate.getDate() + 1);
+        }
+        // Check last streak
+        if (currentStreak > maxStreak) maxStreak = currentStreak;
+
+        statsContainer.innerHTML = `
+            <div class="year-stat">
+                <span class="label">Total</span>
+                <span class="value" style="color: var(--neon-success);">${totalContribs}</span>
+            </div>
+            <div class="year-stat">
+                <span class="label">Max/Day</span>
+                <span class="value">${maxSingleDay}</span>
+            </div>
+            <div class="year-stat">
+                <span class="label">Lng. Streak</span>
+                <span class="value" style="color: var(--neon-secondary);">${maxStreak} <span style="font-size:10px; color:var(--text-muted)">days</span></span>
+            </div>
+             <div class="year-stat">
+                <span class="label">Consistency</span>
+                <span class="value">${Math.round((activeDays / 365) * 100)}%</span>
+            </div>
+        `;
     }
 }
 

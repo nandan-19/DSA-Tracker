@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CS.TRACKER // GHOST PROTOCOL</title>
+    <title>DSA TRACKER</title>
     <!-- Fonts -->
     <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Inter:wght@300;400;600;800&display=swap">
@@ -117,9 +117,25 @@
             </div>
 
             <!-- Heatmap -->
+            <!-- Heatmap -->
             <div class="heatmap-section">
-                <span class="stat-label">Activity Matrix (Last 60 Days)</span>
-                <div class="heatmap-grid" id="heatmap"></div>
+                <span class="stat-label" style="margin-bottom: 1rem; display: block;">Activity Matrix (Past Year)</span>
+                <div class="heatmap-wrapper">
+                    <div class="heatmap-days">
+                        <span></span> <!-- Sun -->
+                        <span>Mon</span>
+                        <span></span> <!-- Tue -->
+                        <span>Wed</span>
+                        <span></span> <!-- Thu -->
+                        <span>Fri</span>
+                        <span></span> <!-- Sat -->
+                    </div>
+                    <div class="heatmap-container">
+                        <div class="heatmap-months" id="heatmapMonths"></div>
+                        <div class="heatmap-grid" id="heatmapGrid"></div>
+                    </div>
+                    <div class="heatmap-stats" id="heatmapStats"></div>
+                </div>
             </div>
 
             <!-- Recent Log -->
