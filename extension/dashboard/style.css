@@ -1,7 +1,7 @@
         :root {
             /* Palette: Void & Neon */
-            --bg-void: #050507;
-            --bg-panel: #0E0E11;
+            --bg-void: #010409;
+            --bg-panel: #010409;
             --bg-panel-hover: #16161A;
             --border-subtle: #222226;
             --border-glow: #333338;
@@ -41,6 +41,30 @@
             background-image:
                 radial-gradient(circle at 10% 20%, rgba(112, 0, 255, 0.03) 0%, transparent 20%),
                 radial-gradient(circle at 90% 80%, rgba(0, 255, 255, 0.03) 0%, transparent 20%);
+        }
+
+
+        /* --- SCROLLBAR --- */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-void);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-glow);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-dim);
+        }
+
+        ::-webkit-scrollbar-corner {
+            background: var(--bg-void);
         }
 
         /* --- UI UTILITIES --- */
@@ -214,7 +238,7 @@
             letter-spacing: -1px;
             line-height: 1;
             margin-bottom: 0.5rem;
-            background: linear-gradient(to right, #fff, #888);
+            background: linear-gradient(to right, #fff, #3a3939);
             background-clip: text;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -540,6 +564,68 @@
             color: var(--text-dim);
             text-transform: uppercase;
             margin-left: 12px;
+        }
+
+        .notes-section {
+            width: 100%;
+            display: none;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-subtle);
+            animation: fadeIn 0.2s ease;
+        }
+
+        .notes-section.active {
+            display: block;
+        }
+
+        .notes-textarea {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-family: var(--font-code);
+            font-size: 0.9rem;
+            padding: 12px;
+            min-height: 80px;
+            resize: vertical;
+            margin-bottom: 0.5rem;
+            transition: border-color 0.2s;
+        }
+
+        .notes-textarea:focus {
+            outline: none;
+            border-color: var(--neon-primary);
+        }
+
+        .notes-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+
+        .btn-icon {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-icon:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .btn-icon.active {
+            color: var(--neon-secondary);
+            background: rgba(0, 255, 255, 0.1);
         }
 
         .delete-action {

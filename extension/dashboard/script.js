@@ -36,12 +36,30 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('cancelDeleteBtn')?.addEventListener('click', closeModal);
     document.getElementById('confirmDeleteBtn')?.addEventListener('click', executeDelete);
 
-    // Global Event Delegation for Delete (CSP Safe)
+    // Global Event Delegation (CSP Safe)
     document.body.addEventListener('click', (e) => {
+        // Delete Action
         const deleteBtn = e.target.closest('[data-action="delete"]');
         if (deleteBtn) {
             const id = deleteBtn.getAttribute('data-id');
             if (id) promptDelete(id);
+            return;
+        }
+
+        // Toggle Notes Action
+        const toggleBtn = e.target.closest('[data-action="toggle-notes"]');
+        if (toggleBtn) {
+            const id = toggleBtn.getAttribute('data-id');
+            if (id) toggleNotes(id);
+            return;
+        }
+
+        // Save Note Action
+        const saveBtn = e.target.closest('[data-action="save-note"]');
+        if (saveBtn) {
+            const id = saveBtn.getAttribute('data-id');
+            if (id) saveNote(id);
+            return;
         }
     });
 
@@ -254,33 +272,53 @@ function createLogEntry(q) {
         border: 1px solid var(--border-subtle);
         border-radius: 12px;
         padding: 1.25rem;
-        display: grid;
-        grid-template-columns: 1fr auto auto;
-        align-items: center;
-        gap: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0;
         transition: all 0.2s;
     " onmouseover="this.style.borderColor='var(--border-glow)'" 
        onmouseout="this.style.borderColor='var(--border-subtle)'">
-        <div class="log-content" style="min-width: 0;">
-            <h3 style="margin: 0 0 0.5rem 0; font-size: 1rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis;" title="${q.title}">
-                <a href="${q.url}" target="_blank" style="color: inherit; text-decoration: none; border-bottom: 1px dotted rgba(255,255,255,0.3); transition: border-color 0.2s;">
-                    ${q.title}
-                </a>
-            </h3>
-            <div style="display:flex; gap: 0.5rem; flex-wrap: wrap;">
-                ${(q.tags || []).slice(0, 3).map(t => `<span class="tag">#${t}</span>`).join('')}
+        
+        <div class="log-main" style="display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 1.5rem; width: 100%;">
+            <div class="log-content" style="min-width: 0;">
+                <h3 style="margin: 0 0 0.5rem 0; font-size: 1rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis;" title="${q.title}">
+                    <a href="${q.url}" target="_blank" style="color: inherit; text-decoration: none; border-bottom: 1px dotted rgba(255,255,255,0.3); transition: border-color 0.2s;">
+                        ${q.title}
+                    </a>
+                </h3>
+                <div style="display:flex; gap: 0.5rem; flex-wrap: wrap;">
+                    ${(q.tags || []).slice(0, 3).map(t => `<span class="tag">#${t}</span>`).join('')}
+                </div>
+            </div>
+            
+            <div class="log-meta" style="display:flex; align-items:center; gap:0.75rem;">
+                <span class="difficulty ${diffClass}">${d}</span>
+                <div style="display:flex; align-items:center; width: 24px; height: 24px;">
+                     ${platformIcon}
+                </div>
+            </div>
+
+            <div class="log-controls" style="display: flex; align-items: center; gap: 0.5rem;">
+                <!-- Notes Toggle -->
+                <button class="btn-icon ${q.note ? 'active' : ''}" title="Notes" data-action="toggle-notes" data-id="${q.id}">
+                    <span class="material-symbols-rounded" style="font-size: 20px;">edit_note</span>
+                </button>
+                
+                <!-- Delete Action -->
+                <button class="btn-icon" style="color: var(--neon-danger);" title="Delete" data-action="delete" data-id="${q.id}">
+                    <span class="material-symbols-rounded" style="font-size: 20px;">close</span>
+                </button>
             </div>
         </div>
-        <div class="log-meta" style="display:flex; align-items:center; gap:0.75rem;">
-            <span class="difficulty ${diffClass}">${d}</span>
-            <div style="display:flex; align-items:center; width: 24px; height: 24px;">
-                 ${platformIcon}
+
+        <!-- Notes Section -->
+        <div id="notes-${q.id}" class="notes-section">
+            <textarea id="note-text-${q.id}" class="notes-textarea" placeholder="Add your notes, approach, or key learnings here...">${q.note || ''}</textarea>
+            <div class="notes-actions">
+                <button class="btn-neon" data-action="save-note" data-id="${q.id}">
+                    <span class="material-symbols-rounded" style="font-size: 18px;">save</span> SAVE
+                </button>
             </div>
-        </div>
-        <div class="delete-action">
-            <button class="btn-neon btn-danger" style="padding: 6px 10px;" data-action="delete" data-id="${q.id}">
-                <span class="material-symbols-rounded" style="font-size: 16px;">close</span>
-            </button>
         </div>
     </div>`;
 }
@@ -568,3 +606,46 @@ function confirmNuke() {
         });
     }
 };
+
+// --- NOTES LOGIC ---
+function toggleNotes(id) {
+    const section = document.getElementById(`notes-${id}`);
+    if (section) {
+        section.classList.toggle('active');
+    }
+}
+
+function saveNote(id) {
+    const textarea = document.getElementById(`note-text-${id}`);
+    const noteContent = textarea ? textarea.value.trim() : '';
+
+    // Update Local Data
+    const questionIndex = appData.findIndex(q => q.id === id);
+    if (questionIndex > -1) {
+        appData[questionIndex].note = noteContent;
+
+        // Persist
+        chrome.storage.sync.set({ questions: appData }, () => {
+            // Visual Feedback
+            const btn = document.querySelector(`#notes-${id} .btn-neon`);
+            const originalText = btn.innerHTML;
+
+            btn.innerHTML = `<span class="material-symbols-rounded" style="font-size: 18px;">check</span> SAVED`;
+            btn.style.borderColor = 'var(--neon-success)';
+            btn.style.color = 'var(--neon-success)';
+
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.style.borderColor = '';
+                btn.style.color = '';
+
+                // Update toggle icon state
+                const toggleBtn = document.querySelector(`button[onclick="toggleNotes('${id}')"]`);
+                if (toggleBtn) {
+                    if (noteContent) toggleBtn.classList.add('active');
+                    else toggleBtn.classList.remove('active');
+                }
+            }, 1500);
+        });
+    }
+}
