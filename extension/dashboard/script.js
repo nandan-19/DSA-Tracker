@@ -117,20 +117,28 @@ function switchView(viewName) {
 function renderDashboard() {
     // 1. Stats
     const total = appData.length;
-    document.getElementById('totalQuestions').innerText = total;
 
-    const hardCount = appData.filter(q => (q.difficulty || 'Medium') === 'Hard').length;
-    document.getElementById('hardCount').innerText = hardCount;
+    // Weekly Velocity (average problems per week over last 4 weeks)
+    const fourWeeksAgo = Date.now() - 28 * 24 * 60 * 60 * 1000;
+    const last4WeeksData = appData.filter(q => (q.timestamp || 0) > fourWeeksAgo);
+    const weeklyAvg = total > 0 ? Math.round(last4WeeksData.length / 4) : 0;
+    document.getElementById('weeklyVelocity').innerText = weeklyAvg;
 
-    // Weekly Count
+    // This Week Count
     const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
     const weekly = appData.filter(q => (q.timestamp || 0) > oneWeekAgo).length;
     document.getElementById('weeklyCount').innerText = weekly;
 
-    // Streak Calculation
-    document.getElementById('currentStreak').innerText = calculateStreak();
+    // Success Rate (Consistency: active days / total days since first problem)
+    const successRate = calculateSuccessRate();
+    document.getElementById('successRate').innerText = successRate + '%';
 
-    // Top Tag
+    // Hard Percentage
+    const hardCount = appData.filter(q => (q.difficulty || 'Medium') === 'Hard').length;
+    const hardPercentage = total > 0 ? Math.round((hardCount / total) * 100) : 0;
+    document.getElementById('hardPercentage').innerText = hardPercentage + '%';
+
+    // Favorite Tag (Top Tag with count)
     const allTags = appData.flatMap(q => q.tags || []);
     if (allTags.length > 0) {
         const freq = {};
@@ -141,9 +149,16 @@ function renderDashboard() {
             if (freq[t] > maxCount) { maxCount = freq[t]; maxTag = t; }
         });
         document.getElementById('topTag').innerText = maxTag;
+        document.getElementById('topTagCount').innerText = maxCount;
     } else {
         document.getElementById('topTag').innerText = "N/A";
+        document.getElementById('topTagCount').innerText = '0';
     }
+
+    // Peak Performance Day (Best day of week)
+    const bestDayData = calculateBestDay();
+    document.getElementById('bestDay').innerText = bestDayData.day;
+    document.getElementById('bestDayCount').innerText = bestDayData.count;
 
     // 2. Recent Feed - Grouped by Date
     const container = document.getElementById('recentFeed');
@@ -211,16 +226,63 @@ function renderDashboard() {
     renderHeatmap();
 }
 
+function calculateSuccessRate() {
+    if (appData.length === 0) return 0;
+
+    // Calculate consistency: percentage of days active since first problem
+    const timestamps = appData.map(q => q.timestamp || 0).filter(t => t > 0);
+    if (timestamps.length === 0) return 0;
+
+    const firstProblemDate = new Date(Math.min(...timestamps));
+    const today = new Date();
+
+    // Calculate total days since first problem
+    const daysSinceStart = Math.ceil((today - firstProblemDate) / (1000 * 60 * 60 * 24));
+    if (daysSinceStart === 0) return 100;
+
+    // Get unique active days
+    const uniqueDates = new Set(appData.map(q => new Date(q.timestamp || 0).toDateString()));
+    const activeDays = uniqueDates.size;
+
+    // Calculate percentage
+    return Math.round((activeDays / daysSinceStart) * 100);
+}
+
+function calculateBestDay() {
+    if (appData.length === 0) return { day: '--', count: 0 };
+
+    // Count problems by day of week
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dayCounts = [0, 0, 0, 0, 0, 0, 0];
+
+    appData.forEach(q => {
+        const date = new Date(q.timestamp || 0);
+        const dayIndex = date.getDay();
+        dayCounts[dayIndex]++;
+    });
+
+    // Find max
+    let maxCount = 0;
+    let maxDayIndex = 0;
+    dayCounts.forEach((count, index) => {
+        if (count > maxCount) {
+            maxCount = count;
+            maxDayIndex = index;
+        }
+    });
+
+    return {
+        day: maxCount > 0 ? dayNames[maxDayIndex] : '--',
+        count: maxCount
+    };
+}
+
 function calculateStreak() {
     if (appData.length === 0) return 0;
 
     // Get unique dates sorted desc
     const uniqueDates = [...new Set(appData.map(q => new Date(q.timestamp || 0).toDateString()))];
-    // We need to compare actual date objects to check continuity
-    // But simplified: check if today/yesterday exists, then count backwards
-
     const dates = uniqueDates.map(d => new Date(d));
-    // Sort descending
     dates.sort((a, b) => b - a);
 
     if (dates.length === 0) return 0;
@@ -230,8 +292,6 @@ function calculateStreak() {
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
 
-    let streak = 0;
-
     // Check if most recent is today or yesterday
     const lastActive = dates[0];
     lastActive.setHours(0, 0, 0, 0);
@@ -240,19 +300,14 @@ function calculateStreak() {
         return 0; // Streak broken
     }
 
-    // Count matches
+    // Count consecutive days
     const dateStrings = new Set(uniqueDates);
-
-    // Start checking from last active date
     let checkDate = new Date(lastActive);
+    let streak = 0;
 
-    while (true) {
-        if (dateStrings.has(checkDate.toDateString())) {
-            streak++;
-            checkDate.setDate(checkDate.getDate() - 1);
-        } else {
-            break;
-        }
+    while (dateStrings.has(checkDate.toDateString())) {
+        streak++;
+        checkDate.setDate(checkDate.getDate() - 1);
     }
 
     return streak;
@@ -451,22 +506,25 @@ function renderHeatmap() {
         // Check last streak
         if (currentStreak > maxStreak) maxStreak = currentStreak;
 
+        // Calculate current streak for heatmap
+        const currentStreakValue = calculateStreak();
+
         statsContainer.innerHTML = `
             <div class="year-stat">
-                <span class="label">Total</span>
-                <span class="value" style="color: var(--neon-success);">${totalContribs}</span>
+                <span class="label">Current Streak</span>
+                <span class="value" style="color: var(--neon-success);">${currentStreakValue} <span style="font-size:10px; color:var(--text-muted)">days</span></span>
             </div>
             <div class="year-stat">
                 <span class="label">Max/Day</span>
                 <span class="value">${maxSingleDay}</span>
             </div>
             <div class="year-stat">
-                <span class="label">Lng. Streak</span>
+                <span class="label">Longest Streak</span>
                 <span class="value" style="color: var(--neon-secondary);">${maxStreak} <span style="font-size:10px; color:var(--text-muted)">days</span></span>
             </div>
              <div class="year-stat">
-                <span class="label">Consistency</span>
-                <span class="value">${Math.round((activeDays / 365) * 100)}%</span>
+                <span class="label">Active Days</span>
+                <span class="value">${activeDays} <span style="font-size:10px; color:var(--text-muted)">/ 365</span></span>
             </div>
         `;
     }
@@ -591,7 +649,7 @@ function exportData() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `vibecoded-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `DSA-Tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
 };
 

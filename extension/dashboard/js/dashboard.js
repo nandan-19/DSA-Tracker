@@ -1,0 +1,423 @@
+// Dashboard Page JavaScript
+// Handles stats, heatmap, and recent feed rendering
+
+// This function is called by shared.js when data is loaded
+function onDataLoaded() {
+    renderDashboard();
+}
+
+// Setup page-specific listeners
+document.addEventListener('DOMContentLoaded', () => {
+    // Dashboard Search
+    const dashboardSearch = document.getElementById('dashboardSearch');
+    if (dashboardSearch) {
+        dashboardSearch.addEventListener('input', (e) => {
+            searchQuery = e.target.value.toLowerCase().trim();
+            renderDashboard();
+        });
+    }
+});
+
+// --- DASHBOARD RENDERER ---
+function renderDashboard() {
+    renderStats();
+    renderRecentFeed();
+    renderHeatmap();
+}
+
+function renderStats() {
+    // 1. Stats
+    const total = appData.length;
+
+    // Weekly Velocity (average problems per week over last 4 weeks)
+    const fourWeeksAgo = Date.now() - 28 * 24 * 60 * 60 * 1000;
+    const last4WeeksData = appData.filter(q => (q.timestamp || 0) > fourWeeksAgo);
+    const weeklyAvg = total > 0 ? Math.round(last4WeeksData.length / 4) : 0;
+    document.getElementById('weeklyVelocity').innerText = weeklyAvg;
+
+    // This Week Count
+    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const weekly = appData.filter(q => (q.timestamp || 0) > oneWeekAgo).length;
+    document.getElementById('weeklyCount').innerText = weekly;
+
+    // Success Rate (Consistency: active days / total days since first problem)
+    const successRate = calculateSuccessRate();
+    document.getElementById('successRate').innerText = successRate + '%';
+
+    // Hard Percentage
+    const hardCount = appData.filter(q => (q.difficulty || 'Medium') === 'Hard').length;
+    const hardPercentage = total > 0 ? Math.round((hardCount / total) * 100) : 0;
+    document.getElementById('hardPercentage').innerText = hardPercentage + '%';
+
+    // Favorite Tag (Top Tag with count)
+    const allTags = appData.flatMap(q => q.tags || []);
+    if (allTags.length > 0) {
+        const freq = {};
+        let maxTag = "--";
+        let maxCount = 0;
+        allTags.forEach(t => {
+            freq[t] = (freq[t] || 0) + 1;
+            if (freq[t] > maxCount) { maxCount = freq[t]; maxTag = t; }
+        });
+        document.getElementById('topTag').innerText = maxTag;
+        document.getElementById('topTagCount').innerText = maxCount;
+    } else {
+        document.getElementById('topTag').innerText = "N/A";
+        document.getElementById('topTagCount').innerText = '0';
+    }
+
+    // Peak Performance Day (Best day of week)
+    const bestDayData = calculateBestDay();
+    document.getElementById('bestDay').innerText = bestDayData.day;
+    document.getElementById('bestDayCount').innerText = bestDayData.count;
+}
+
+function renderRecentFeed() {
+    const container = document.getElementById('recentFeed');
+    container.innerHTML = '';
+
+    if (appData.length === 0) {
+        container.innerHTML = '<div style="color:var(--text-muted); padding:1rem;">No data received. Awaiting input...</div>';
+        return;
+    }
+
+    // Filter by search query
+    let filteredData = appData;
+    if (searchQuery) {
+        filteredData = appData.filter(q => {
+            const titleMatch = (q.title || '').toLowerCase().includes(searchQuery);
+            const tagMatch = (q.tags || []).some(t => t.toLowerCase().includes(searchQuery));
+            const platformMatch = (q.platform || '').toLowerCase().includes(searchQuery);
+            return titleMatch || tagMatch || platformMatch;
+        });
+    }
+
+    if (filteredData.length === 0) {
+        container.innerHTML = '<div style="color:var(--text-muted); padding:1rem;">No results found.</div>';
+        return;
+    }
+
+    // Group questions by date
+    const grouped = {};
+    filteredData.slice(0, 10).forEach(q => {
+        const dateObj = new Date(q.timestamp || Date.now());
+        const dateKey = dateObj.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+        });
+        if (!grouped[dateKey]) grouped[dateKey] = [];
+        grouped[dateKey].push(q);
+    });
+
+    // Render each date group
+    Object.entries(grouped).forEach(([dateStr, questions]) => {
+        container.innerHTML += `
+            <div class="date-group" style="margin-bottom: 2rem;">
+                <div class="date-header" style="
+                    font-family: var(--font-code);
+                    font-size: 0.75rem;
+                    color: var(--neon-secondary);
+                    letter-spacing: 2px;
+                    margin-bottom: 1rem;
+                    padding-bottom: 0.5rem;
+                    border-bottom: 1px solid var(--border-subtle);
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                ">
+                    <span class="material-symbols-rounded" style="font-size: 16px;">calendar_today</span>
+                    ${dateStr}
+                </div>
+                <div class="date-questions" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    ${questions.map(q => createLogEntry(q)).join('')}
+                </div>
+            </div>`;
+    });
+}
+
+function createLogEntry(q) {
+    let diffClass = 'diff-med';
+    const d = (q.difficulty || 'Medium');
+    if (d === 'Hard') diffClass = 'diff-hard';
+    if (d === 'Easy') diffClass = 'diff-easy';
+
+    let platformIcon = getPlatformIcon(q.platform);
+
+    return `
+    <div class="log-entry" style="
+        background: var(--bg-panel);
+        border: 1px solid var(--border-subtle);
+        border-radius: 12px;
+        padding: 1.25rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        transition: all 0.2s;
+    " onmouseover="this.style.borderColor='var(--border-glow)'" 
+       onmouseout="this.style.borderColor='var(--border-subtle)'">
+        
+        <div class="log-main" style="display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 1.5rem; width: 100%;">
+            <div class="log-content" style="min-width: 0;">
+                <h3 style="margin: 0 0 0.5rem 0; font-size: 1rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis;" title="${q.title}">
+                    <a href="${q.url}" target="_blank" style="color: inherit; text-decoration: none; border-bottom: 1px dotted rgba(255,255,255,0.3); transition: border-color 0.2s;">
+                        ${q.title}
+                    </a>
+                </h3>
+                <div style="display:flex; gap: 0.5rem; flex-wrap: wrap;">
+                    ${(q.tags || []).slice(0, 3).map(t => `<span class="tag">#${t}</span>`).join('')}
+                </div>
+            </div>
+            
+            <div class="log-meta" style="display:flex; align-items:center; gap:0.75rem;">
+                <span class="difficulty ${diffClass}">${d}</span>
+                <div style="display:flex; align-items:center; width: 24px; height: 24px;">
+                     ${platformIcon}
+                </div>
+            </div>
+
+            <div class="log-controls" style="display: flex; align-items: center; gap: 0.5rem;">
+                <!-- Notes Toggle -->
+                <button class="btn-icon ${q.note ? 'active' : ''}" title="Notes" data-action="toggle-notes" data-id="${q.id}">
+                    <span class="material-symbols-rounded" style="font-size: 20px;">edit_note</span>
+                </button>
+                
+                <!-- Delete Action -->
+                <button class="btn-icon" style="color: var(--neon-danger);" title="Delete" data-action="delete" data-id="${q.id}">
+                    <span class="material-symbols-rounded" style="font-size: 20px;">close</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Notes Section -->
+        <div id="notes-${q.id}" class="notes-section">
+            <textarea id="note-text-${q.id}" class="notes-textarea" placeholder="Add your notes, approach, or key learnings here...">${q.note || ''}</textarea>
+            <div class="notes-actions">
+                <button class="btn-neon" data-action="save-note" data-id="${q.id}">
+                    <span class="material-symbols-rounded" style="font-size: 18px;">save</span> SAVE
+                </button>
+            </div>
+        </div>
+    </div>`;
+}
+
+// --- CALCULATION FUNCTIONS ---
+function calculateSuccessRate() {
+    if (appData.length === 0) return 0;
+
+    // Calculate consistency: percentage of days active since first problem
+    const timestamps = appData.map(q => q.timestamp || 0).filter(t => t > 0);
+    if (timestamps.length === 0) return 0;
+
+    const firstProblemDate = new Date(Math.min(...timestamps));
+    const today = new Date();
+
+    // Calculate total days since first problem
+    const daysSinceStart = Math.ceil((today - firstProblemDate) / (1000 * 60 * 60 * 24));
+    if (daysSinceStart === 0) return 100;
+
+    // Get unique active days
+    const uniqueDates = new Set(appData.map(q => new Date(q.timestamp || 0).toDateString()));
+    const activeDays = uniqueDates.size;
+
+    // Calculate percentage
+    return Math.round((activeDays / daysSinceStart) * 100);
+}
+
+function calculateBestDay() {
+    if (appData.length === 0) return { day: '--', count: 0 };
+
+    // Count problems by day of week
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dayCounts = [0, 0, 0, 0, 0, 0, 0];
+
+    appData.forEach(q => {
+        const date = new Date(q.timestamp || 0);
+        const dayIndex = date.getDay();
+        dayCounts[dayIndex]++;
+    });
+
+    // Find max
+    let maxCount = 0;
+    let maxDayIndex = 0;
+    dayCounts.forEach((count, index) => {
+        if (count > maxCount) {
+            maxCount = count;
+            maxDayIndex = index;
+        }
+    });
+
+    return {
+        day: maxCount > 0 ? dayNames[maxDayIndex] : '--',
+        count: maxCount
+    };
+}
+
+function calculateStreak() {
+    if (appData.length === 0) return 0;
+
+    // Get unique dates sorted desc
+    const uniqueDates = [...new Set(appData.map(q => new Date(q.timestamp || 0).toDateString()))];
+    const dates = uniqueDates.map(d => new Date(d));
+    dates.sort((a, b) => b - a);
+
+    if (dates.length === 0) return 0;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    // Check if most recent is today or yesterday
+    const lastActive = dates[0];
+    lastActive.setHours(0, 0, 0, 0);
+
+    if (lastActive.getTime() !== today.getTime() && lastActive.getTime() !== yesterday.getTime()) {
+        return 0; // Streak broken
+    }
+
+    // Count consecutive days
+    const dateStrings = new Set(uniqueDates);
+    let checkDate = new Date(lastActive);
+    let streak = 0;
+
+    while (dateStrings.has(checkDate.toDateString())) {
+        streak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+    }
+
+    return streak;
+}
+
+// --- HEATMAP RENDERER ---
+function renderHeatmap() {
+    const grid = document.getElementById('heatmapGrid');
+    const monthsContainer = document.getElementById('heatmapMonths');
+    const statsContainer = document.getElementById('heatmapStats');
+
+    if (!grid || !monthsContainer) return;
+
+    grid.innerHTML = '';
+    monthsContainer.innerHTML = '';
+
+    // Data Map
+    const activityMap = {};
+    appData.forEach(q => {
+        const dateStr = new Date(q.timestamp || 0).toDateString();
+        activityMap[dateStr] = (activityMap[dateStr] || 0) + 1;
+    });
+
+    // Trailing Year Configuration (Last 365 Days)
+    const endDate = new Date(); // Today
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - 365);
+
+    // Calculate start padding to align with Sunday (Row 1)
+    const startPadding = startDate.getDay();
+
+    // Fill empty cells for days before startDate in the first week
+    for (let i = 0; i < startPadding; i++) {
+        const placeholder = document.createElement('div');
+        placeholder.style.width = '12px';
+        placeholder.style.height = '12px';
+        grid.appendChild(placeholder);
+    }
+
+    // Iterate through all days from startDate to endDate
+    let currentDate = new Date(startDate);
+    let cellCount = startPadding;
+    let previouslyLabeledMonth = -1;
+
+    // Use fragment for performance
+    const gridFragment = document.createDocumentFragment();
+    const monthsFragment = document.createDocumentFragment();
+
+    while (currentDate <= endDate) {
+        const dateStr = currentDate.toDateString();
+        const count = activityMap[dateStr] || 0;
+        const month = currentDate.getMonth();
+
+        // Month Labels Logic
+        if (month !== previouslyLabeledMonth) {
+            const colIndex = Math.floor(cellCount / 7);
+            const label = document.createElement('div');
+            label.className = 'month-label';
+            label.innerText = currentDate.toLocaleDateString('en-US', { month: 'short' });
+            label.style.left = `${colIndex * 15}px`;
+            monthsFragment.appendChild(label);
+            previouslyLabeledMonth = month;
+        }
+
+        // Create Cell
+        const div = document.createElement('div');
+        div.className = 'heat-cell';
+        div.title = `${dateStr}: ${count} contributions`;
+
+        if (count > 0) {
+            if (count === 1) div.classList.add('heat-l1');
+            else if (count === 2) div.classList.add('heat-l2');
+            else if (count === 3) div.classList.add('heat-l3');
+            else div.classList.add('heat-l4');
+        }
+
+        gridFragment.appendChild(div);
+
+        // Increment
+        currentDate.setDate(currentDate.getDate() + 1);
+        cellCount++;
+    }
+
+    grid.appendChild(gridFragment);
+    monthsContainer.appendChild(monthsFragment);
+
+    // --- RENDER YEARLY STATS ---
+    if (statsContainer) {
+        // Calculate Stats for the rendered period
+        let totalContribs = 0;
+        let activeDays = 0;
+        let maxStreak = 0;
+        let currentStreak = 0;
+        let maxSingleDay = 0;
+
+        let iterDate = new Date(startDate);
+        while (iterDate <= endDate) {
+            const dStr = iterDate.toDateString();
+            const count = activityMap[dStr] || 0;
+
+            if (count > 0) {
+                totalContribs += count;
+                activeDays++;
+                currentStreak++;
+                if (count > maxSingleDay) maxSingleDay = count;
+            } else {
+                if (currentStreak > maxStreak) maxStreak = currentStreak;
+                currentStreak = 0;
+            }
+            iterDate.setDate(iterDate.getDate() + 1);
+        }
+        // Check last streak
+        if (currentStreak > maxStreak) maxStreak = currentStreak;
+
+        // Calculate current streak for heatmap
+        const currentStreakValue = calculateStreak();
+
+        statsContainer.innerHTML = `
+            <div class="year-stat">
+                <span class="label">Current Streak</span>
+                <span class="value" style="color: var(--neon-success);">${currentStreakValue} <span style="font-size:10px; color:var(--text-muted)">days</span></span>
+            </div>
+            <div class="year-stat">
+                <span class="label">Max/Day</span>
+                <span class="value">${maxSingleDay}</span>
+            </div>
+            <div class="year-stat">
+                <span class="label">Longest Streak</span>
+                <span class="value" style="color: var(--neon-secondary);">${maxStreak} <span style="font-size:10px; color:var(--text-muted)">days</span></span>
+            </div>
+             <div class="year-stat">
+                <span class="label">Active Days</span>
+                <span class="value">${activeDays} <span style="font-size:10px; color:var(--text-muted)">/ 365</span></span>
+            </div>
+        `;
+    }
+}

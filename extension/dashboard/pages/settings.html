@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - DSA TRACKER</title>
+    <!-- Fonts -->
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Inter:wght@300;400;600;800&display=swap">
+    <!-- Icons -->
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <link rel="stylesheet" href="../style.css">
+</head>
+
+<body>
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+        <div class="brand-icon">
+            <img src="../../icons/icon.png" style="width: 32px; height: 32px; border-radius: 6px;">
+            <span class="brand-text">DSA TRACKER</span>
+        </div>
+
+        <div class="nav-menu">
+            <div class="nav-item" data-view="dashboard">
+                <span class="material-symbols-rounded icon">grid_view</span>
+                <span>Command Center</span>
+            </div>
+            <div class="nav-item" data-view="analytics">
+                <span class="material-symbols-rounded icon">data_usage</span>
+                <span>Analytics</span>
+            </div>
+            <div class="nav-item" data-view="archive">
+                <span class="material-symbols-rounded icon">history</span>
+                <span>Log Archive</span>
+            </div>
+            <div class="nav-item active" data-view="settings">
+                <span class="material-symbols-rounded icon">terminal</span>
+                <span>Settings</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- MAIN HUD -->
+    <main class="hud-container">
+
+        <header class="hud-header">
+            <div class="header-title">
+                <h1 id="page-title">SYSTEM SETTINGS</h1>
+            </div>
+        </header>
+
+        <div class="settings-panel">
+            <div class="setting-group">
+                <h3>DATA MANAGEMENT</h3>
+
+                <div class="control-row">
+                    <div class="control-info">
+                        <h4>Export Data</h4>
+                        <p>Download your tracking history as JSON.</p>
+                    </div>
+                    <button class="btn-neon" id="exportBtn">
+                        <span class="material-symbols-rounded">download</span> EXPORT
+                    </button>
+                </div>
+
+                <div class="control-row">
+                    <div class="control-info">
+                        <h4>Import Data</h4>
+                        <p>Restore from a previous backup file.</p>
+                    </div>
+                    <button class="btn-neon" id="importBtn">
+                        <span class="material-symbols-rounded">upload</span> IMPORT
+                    </button>
+                </div>
+            </div>
+
+            <div class="setting-group">
+                <h3 style="color: var(--neon-danger); border-color: rgba(255,0,85,0.3);">DANGER ZONE</h3>
+                <div class="control-row">
+                    <div class="control-info">
+                        <h4 style="color: var(--neon-danger);">Nuke Database</h4>
+                        <p>Permanently delete all tracked questions.</p>
+                    </div>
+                    <button class="btn-neon btn-danger" id="nukeBtn">
+                        <span class="material-symbols-rounded">delete_forever</span> NUKE
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script src="../js/shared.js"></script>
+    <script src="../js/settings.js"></script>
+</body>
+
+</html>
