@@ -136,11 +136,38 @@ function renderRecentFeed() {
     });
 }
 
+// Helper function to get color based on rating (for Codeforces)
+function getRatingColor(difficulty, platform) {
+    // Only apply custom colors for Codeforces numeric ratings
+    if (platform && platform.toLowerCase().includes('codeforces') && difficulty && !isNaN(difficulty)) {
+        const rating = parseInt(difficulty);
+        if (rating < 1200) return '#808080'; // Gray - Newbie
+        if (rating < 1400) return '#00a550'; // Green - Pupil
+        if (rating < 1600) return '#03a89e'; // Cyan - Specialist
+        if (rating < 1900) return '#0000ff'; // Blue - Expert
+        if (rating < 2100) return '#a0a'; // Violet - Candidate Master
+        if (rating < 2400) return '#ff8c00'; // Orange - Master/IM
+        return '#ff0000'; // Red - Grandmaster+
+    }
+    return null; // Use default CSS classes for other platforms
+}
+
 function createLogEntry(q) {
     let diffClass = 'diff-med';
     const d = (q.difficulty || 'Medium');
-    if (d === 'Hard') diffClass = 'diff-hard';
-    if (d === 'Easy') diffClass = 'diff-easy';
+
+    // Check if this is a Codeforces rating
+    const customColor = getRatingColor(d, q.platform);
+    let diffStyle = '';
+
+    if (customColor) {
+        // Use custom color for Codeforces ratings
+        diffStyle = `style="color: ${customColor}; border-color: ${customColor};"`;
+    } else {
+        // Use standard difficulty classes
+        if (d === 'Hard') diffClass = 'diff-hard';
+        if (d === 'Easy') diffClass = 'diff-easy';
+    }
 
     let platformIcon = getPlatformIcon(q.platform);
 
@@ -170,7 +197,7 @@ function createLogEntry(q) {
             </div>
             
             <div class="log-meta" style="display:flex; align-items:center; gap:0.75rem;">
-                <span class="difficulty ${diffClass}">${d}</span>
+                <span class="difficulty ${diffClass}" ${diffStyle}>${d}</span>
                 <div style="display:flex; align-items:center; width: 24px; height: 24px;">
                      ${platformIcon}
                 </div>

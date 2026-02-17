@@ -33,8 +33,7 @@ const extractors = {
             .filter(Boolean);
 
         const rating = document.querySelector('.ProblemInfo')?.textContent?.match(/\*(\d+)/)?.[1];
-        const difficulty = rating ?
-            (rating >= 2000 ? 'Hard' : rating >= 1400 ? 'Medium' : 'Easy') : null;
+        const difficulty = rating || null;
 
         return { platform: 'CodeForces', title, tags, difficulty };
     },
@@ -53,16 +52,116 @@ const extractors = {
     },
 
     geeksforgeeks: () => {
-        const title = document.querySelector('.problem-title')?.textContent?.trim() ||
+        // Title extraction - multiple fallbacks
+        const title = document.querySelector('.problems_problem_content__title__L2cB2')?.textContent?.trim() ||
+            document.querySelector('[class*="problem_content__title"]')?.textContent?.trim() ||
+            document.querySelector('.problem-title')?.textContent?.trim() ||
             document.querySelector('h1')?.textContent?.trim() ||
             document.querySelector('.article-title')?.textContent?.trim();
 
-        const tags = Array.from(document.querySelectorAll('.problem-tags a, .article-tags a'))
+        // Tags extraction - multiple fallbacks for GFG's dynamic structure
+        const tagElements = document.querySelectorAll(
+            '.problems_tag_container__kWANg a, ' +
+            '[class*="tag_container"] a, ' +
+            '.problem-tags a, ' +
+            '.article-tags a, ' +
+            'a[href*="/explore?category"]'
+        );
+
+        const tags = Array.from(tagElements)
             .map(tag => tag.textContent.trim())
             .filter(Boolean);
 
-        const difficulty = document.querySelector('.problem-difficulty')?.textContent?.trim() ||
-            document.querySelector('[class*="difficulty"]')?.textContent?.trim();
+        // Difficulty extraction - enhanced with more selectors
+        let difficulty = null;
+
+        // Try multiple strategies
+        const strategies = [
+            // Strategy 0: Look for <strong> tag near "Difficulty:" text (most common current structure)
+            () => {
+                // Find all text nodes containing "Difficulty:"
+                const walker = document.createTreeWalker(
+                    document.body,
+                    NodeFilter.SHOW_TEXT,
+                    null
+                );
+
+                let node;
+                while (node = walker.nextNode()) {
+                    if (node.textContent?.includes('Difficulty:')) {
+                        // Check if the parent or nearby element has a <strong> tag
+                        const parent = node.parentElement;
+                        const strong = parent?.querySelector('strong');
+                        if (strong) {
+                            return strong.textContent?.trim();
+                        }
+                        // Also check siblings
+                        const nextSibling = parent?.nextElementSibling;
+                        if (nextSibling?.tagName === 'STRONG') {
+                            return nextSibling.textContent?.trim();
+                        }
+                    }
+                }
+                return null;
+            },
+
+            // Strategy 1: Direct class selectors (current UI)
+            () => document.querySelector('.problems_difficulty_text__Yh3c6')?.textContent?.trim(),
+            () => document.querySelector('[class*="difficulty_text"]')?.textContent?.trim(),
+
+            // Strategy 2: Look for difficulty badges/spans
+            () => document.querySelector('.problemDifficulty')?.textContent?.trim(),
+            () => document.querySelector('[class*="Difficulty"]')?.textContent?.trim(),
+
+            // Strategy 3: Search within problem info/header sections
+            () => document.querySelector('.problems_header_content__title__uKWIJ')?.parentElement
+                ?.querySelector('[class*="difficulty"]')?.textContent?.trim(),
+            () => document.querySelector('.problem-header')?.querySelector('[class*="difficulty"]')?.textContent?.trim(),
+
+            // Strategy 4: Look for div containing "Difficulty" text
+            () => {
+                const allDivs = Array.from(document.querySelectorAll('div[class*="difficulty"], span[class*="difficulty"]'));
+                for (const div of allDivs) {
+                    const text = div.textContent?.trim();
+                    if (text && (text.includes('Easy') || text.includes('Medium') || text.includes('Hard') || text.includes('Basic') || text.includes('School'))) {
+                        return text;
+                    }
+                }
+                return null;
+            },
+
+            // Strategy 5: Generic difficulty selector
+            () => document.querySelector('.problem-difficulty')?.textContent?.trim(),
+            () => document.querySelector('[class*="difficulty"]')?.textContent?.trim()
+        ];
+
+        // Try each strategy until we get a result
+        for (const strategy of strategies) {
+            try {
+                const result = strategy();
+                if (result) {
+                    difficulty = result;
+                    break;
+                }
+            } catch (e) {
+                continue;
+            }
+        }
+
+        // Clean up difficulty text (GFG often includes extra text)
+        if (difficulty) {
+            difficulty = difficulty
+                .replace(/Difficulty\s*:\s*/i, '')
+                .replace(/Level\s*:\s*/i, '')
+                .trim();
+
+            // Normalize GFG specific difficulty levels
+            if (difficulty.toLowerCase().includes('school')) difficulty = 'School';
+            else if (difficulty.toLowerCase().includes('basic')) difficulty = 'Basic';
+            else if (difficulty.toLowerCase().includes('easy')) difficulty = 'Easy';
+            else if (difficulty.toLowerCase().includes('medium')) difficulty = 'Medium';
+            else if (difficulty.toLowerCase().includes('hard')) difficulty = 'Hard';
+        }
 
         return { platform: 'GeeksforGeeks', title, tags, difficulty };
     },

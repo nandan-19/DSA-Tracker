@@ -15,6 +15,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+// Helper function to get color based on rating (for Codeforces)
+function getRatingColor(difficulty, platform) {
+    // Only apply custom colors for Codeforces numeric ratings
+    if (platform && platform.toLowerCase().includes('codeforces') && difficulty && !isNaN(difficulty)) {
+        const rating = parseInt(difficulty);
+        if (rating < 1200) return '#808080'; // Gray - Newbie
+        if (rating < 1400) return '#00a550'; // Green - Pupil
+        if (rating < 1600) return '#03a89e'; // Cyan - Specialist
+        if (rating < 1900) return '#0000ff'; // Blue - Expert
+        if (rating < 2100) return '#a0a'; // Violet - Candidate Master
+        if (rating < 2400) return '#ff8c00'; // Orange - Master/IM
+        return '#ff0000'; // Red - Grandmaster+
+    }
+    return null; // Use default CSS classes for other platforms
+}
+
 function renderArchive() {
     const tbody = document.getElementById('archiveTableBody');
     const filterInput = document.getElementById('archiveSearch');
@@ -28,9 +44,16 @@ function renderArchive() {
         const tagMatch = (q.tags || []).some(t => t.toLowerCase().includes(filter));
         return titleMatch || tagMatch;
     }).forEach(q => {
-        let diffColor = 'var(--neon-secondary)'; // Med
-        if (q.difficulty === 'Hard') diffColor = 'var(--neon-danger)';
-        if (q.difficulty === 'Easy') diffColor = 'var(--neon-success)';
+        // Check for custom rating color first
+        const customColor = getRatingColor(q.difficulty, q.platform);
+        let diffColor = customColor;
+
+        if (!customColor) {
+            // Use default colors for non-numeric difficulties
+            diffColor = 'var(--neon-secondary)'; // Med
+            if (q.difficulty === 'Hard') diffColor = 'var(--neon-danger)';
+            if (q.difficulty === 'Easy') diffColor = 'var(--neon-success)';
+        }
 
         const dateStr = new Date(q.timestamp || 0).toLocaleDateString();
 

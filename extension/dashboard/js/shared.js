@@ -121,6 +121,23 @@ function getPlatformIcon(platform) {
     return `<img src="${src}" style="width:16px; height:16px; object-fit:contain; opacity:0.8;">`;
 }
 
+// Helper function to get color based on rating (for Codeforces)
+function getRatingColor(difficulty, platform) {
+    // Only apply custom colors for Codeforces numeric ratings
+    if (platform && platform.toLowerCase().includes('codeforces') && difficulty && !isNaN(difficulty)) {
+        const rating = parseInt(difficulty);
+        if (rating < 1200) return '#808080'; // Gray - Newbie
+        if (rating < 1400) return '#00a550'; // Green - Pupil
+        if (rating < 1600) return '#03a89e'; // Cyan - Specialist
+        if (rating < 1900) return '#0000ff'; // Blue - Expert
+        if (rating < 2100) return '#a0a'; // Violet - Candidate Master
+        if (rating < 2400) return '#ff8c00'; // Orange - Master/IM
+        return '#ff0000'; // Red - Grandmaster+
+    }
+    return null; // Use default CSS classes for other platforms
+}
+
+
 // --- DELETE MODAL LOGIC ---
 let itemToDelete = null;
 
